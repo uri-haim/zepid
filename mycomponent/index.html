@@ -1,0 +1,101 @@
+<html>
+  <body>
+    <!DOCTYPE html>
+  <head>
+    <title>Place Autocomplete Example</title>
+    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCy4nYT3DiwhyCoN5Yz1jqWCLEwQpt1YWk&libraries=places"></script>
+    <style>
+  .styled-input {
+    width: 100%;
+    max-width: 1500px; /* Adjust as needed */
+    padding: 10px 15px;
+    font-size: 16px;
+    color: #6c757d;
+    background-color: #f8f9fa;
+    border: 1px solid #dfe2e5;
+    border-radius: 5px;
+    outline: none;
+    transition: box-shadow 0.2s ease;
+  }
+
+  .styled-input:focus {
+    box-shadow: 0 0 5px rgba(0, 123, 255, 0.25);
+    border-color: #80bdff;
+  }
+</style>
+
+  </head>
+  <body>
+    <input id="autocomplete" class="styled-input" placeholder="600 Pennsylvania Avenue NW, Washington, DC 20500" >
+    <br> <br>
+
+  </body>
+
+    <script>
+
+
+      function initAutocomplete() {
+        var autocomplete = new google.maps.places.Autocomplete(
+          document.getElementById('autocomplete'),
+        );
+
+        autocomplete.addListener('place_changed', function () {
+          var place = autocomplete.getPlace();
+          var latitude = place.geometry.location.lat();
+          var longitude = place.geometry.location.lng();
+          var fa = place.formatted_address;
+
+          sendDataToPython({
+            // value: latitude + "," + longitude,
+            value: fa,
+            dataType: "json",
+          });
+        });
+      }
+
+      google.maps.event.addDomListener(window, 'load', initAutocomplete);
+
+      function sendDataToPython(data) {
+        sendMessageToStreamlitClient("streamlit:setComponentValue", data);
+      }
+
+      // ----------------------------------------------------
+      // Just copy/paste these functions as-is:
+
+      function sendMessageToStreamlitClient(type, data) {
+        var outData = Object.assign({
+          isStreamlitMessage: true,
+          type: type,
+        }, data);
+        window.parent.postMessage(outData, "*");
+      }
+
+      function init() {
+        sendMessageToStreamlitClient("streamlit:componentReady", { apiVersion: 1 });
+      }
+
+      function setFrameHeight(height) {
+        sendMessageToStreamlitClient("streamlit:setFrameHeight", { height: height });
+      }
+
+      // ----------------------------------------------------
+      // Now modify this part of the code to fit your needs:
+
+      // Hook things up!
+      window.addEventListener("message", function (event) {
+        if (event.data.type !== "streamlit:render") return;
+        // Access values sent from Python here!
+      });
+      init();
+
+      // Hack to autoset the iframe height.
+      window.addEventListener("load", function () {
+        window.setTimeout(function () {
+          setFrameHeight(document.documentElement.clientHeight)
+        }, 0);
+      });
+      setFrameHeight(100);
+
+    </script>
+  </body>
+</html>
