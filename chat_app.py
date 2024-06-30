@@ -9,8 +9,8 @@ st.set_page_config(page_title="Zepi",
 
 
 # Initialise the OpenAI client, and retrieve the assistant
-client = OpenAI(api_key=OPENAI_API_KEY)
-assistant = client.beta.assistants.retrieve(ASSISTANT_ID)
+client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
+assistant = client.beta.assistants.retrieve(st.secrets["ASSISTANT_ID"])
 
 # Apply custom CSS
 st.html("""
@@ -226,5 +226,3 @@ if st.session_state.inactivity_state == "name":
     st.session_state.inactivity_state = "active"
     st.session_state.will_sleep = 0
     st.rerun()
-
-
