@@ -100,17 +100,32 @@ if "messages2" not in st.session_state:
 
 
 # UI
+# Apply custom CSS
+st.html("""
+        <style>
+            #MainMenu {visibility: hidden}
+            header {visibility: hidden}
+            footer {visibility: hidden}
+            .stApp {
+                background-image: url('https://www.nicepng.com/png/full/859-8598719_apple-iphone-xs-max-gold-vector-iphone-x.png');
+                background-repeat: no-repeat;
+                background-size: contain;
+                background-position: center;
+                height: 100vh; /* Ensure full viewport height coverage */
+            }
+            .block-container {
+                padding-left: 36rem;
+                padding-right: 36rem;
 
-b1,b2,b3 = st.columns(3)
-with b1:
-    if st.button("flow1"):
-        st.switch_page("chat_app.py")
-with b2:
-    if st.button("flow2"):
-        st.switch_page("pages/flow2.py")
-with b3:
-    if st.button("flow3"):
-        st.switch_page("pages/flow3.py")
+            }
+            [data-testid="stBottom"] > div {
+                background: transparent;
+                padding-left: 31rem;
+                padding-right: 31rem;
+            }      
+
+        </style>
+        """)
 
 for message in st.session_state.messages2:
     with st.chat_message(message["role"]):
