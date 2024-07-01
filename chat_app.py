@@ -16,14 +16,26 @@ assistant = client.beta.assistants.retrieve(st.secrets["ASSISTANT_ID"])
 st.html("""
         <style>
             #MainMenu {visibility: hidden}
-            #header {visibility: hidden}
-            #footer {visibility: hidden}
+            header {visibility: hidden}
+            footer {visibility: hidden}
+            .stApp {
+                background-image: url('https://www.nicepng.com/png/full/859-8598719_apple-iphone-xs-max-gold-vector-iphone-x.png');
+                background-repeat: no-repeat;
+                background-size: contain;
+                background-position: center;
+                height: 100vh; /* Ensure full viewport height coverage */
+            }
             .block-container {
-                padding-top: 3rem;
-                padding-bottom: 2rem;
-                padding-left: 3rem;
-                padding-right: 3rem;
-                }
+                padding-left: 36rem;
+                padding-right: 36rem;
+
+            }
+            [data-testid="stBottom"] > div {
+                background: transparent;
+                padding-left: 31rem;
+                padding-right: 31rem;
+            }      
+            
         </style>
         """)
 
@@ -70,13 +82,13 @@ if "inactivity_state" not in st.session_state:
     st.session_state.inactivity_state = "active"
 
 
-b1,b2 = st.columns(2)
-with b1:
-    if st.button("flow1"):
-        st.switch_page("chat_app.py")
-with b2:
-    if st.button("flow2"):
-        st.switch_page("pages/flow2.py")
+# b1,b2 = st.columns(2)
+# with b1:
+#     if st.button("flow1"):
+#         st.switch_page("chat_app.py")
+# with b2:
+#     if st.button("flow2"):
+#         st.switch_page("pages/flow2.py")
 
 if "messages" not in st.session_state:
     st.session_state.messages = [{"role": "assistant",
@@ -161,6 +173,10 @@ if st.session_state.prompt_message == "Your shipping address:":
     st.markdown("")
     st.markdown("")
     st.markdown("")
+    st.markdown("")
+
+
+
     st.session_state.user_address = mycomponent()
 
 elif prompt:= st.chat_input(st.session_state.prompt_message):
@@ -226,3 +242,5 @@ if st.session_state.inactivity_state == "name":
     st.session_state.inactivity_state = "active"
     st.session_state.will_sleep = 0
     st.rerun()
+
+
