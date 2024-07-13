@@ -5,6 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Zepi</title>
     <style>
+        :root {
+            --offset: 10px;
+        }
         body, html {
             height: 100%;
             margin-left: 25%;
@@ -38,12 +41,38 @@
             cursor: pointer;
             transition: all 0.3s ease;
             position: relative;
+            width: 50%;
+            text-align: center;
         }
-        .sidebar li:nth-child(n+2) {
-            margin-top: 10px;
+        .sidebar li:nth-child(1) {
+            margin-left: 5%;
+        }
+        .sidebar li:nth-child(2) {
+            margin-left: 10%;
+        }
+        .sidebar li:nth-child(3) {
+            margin-left: 15%;
+        }
+        .sidebar li:nth-child(4) {
+            margin-left: 20%;
+        }
+        .sidebar li:nth-child(5) {
+            margin-left: 25%;
+        }
+        .sidebar li:nth-child(6) {
+            margin-left: 30%;
         }
         .sidebar li.selected {
-            background-color: lightblue;
+            background-color: pink;
+        }
+        .sidebar li.selected::before {
+            content: '➤';
+            position: absolute;
+            left: -20px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 20px;
+            color: #fff;
         }
         .main-content {
             flex-grow: 1;
@@ -109,8 +138,8 @@
         .battery-icon {
             position: absolute;
             top: 3.5%;
-            right: 11%;
-            height: 2.5%;
+            right: 13%;
+            height: 2%;
             z-index: 1;
         }
     </style>
@@ -137,14 +166,14 @@
                     <span class="eva-text">Eva</span>
                     <img src="greenV.jpeg" alt="Small Icon" class="small-icon">
                 </div>
-                <iframe src="https://8v787khgbeuvpdcyhku6vp.streamlit.app/?embedded=true" frameborder="0"></iframe>
+                <iframe id="myIframe" src="https://8v787khgbeuvpdcyhku6vp.streamlit.app/?embedded=true" frameborder="0"></iframe>
             </div>
         </div>
     </div>
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            const secondTopic = document.querySelector('.sidebar ul li:nth-child(2)');
-            secondTopic.classList.add('selected');
+            const firstTopic = document.querySelector('.sidebar ul li:nth-child(1)');
+            firstTopic.classList.add('selected');
 
             document.querySelectorAll('.sidebar li').forEach(function(item) {
                 item.addEventListener('click', function() {
