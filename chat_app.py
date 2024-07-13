@@ -1,6 +1,8 @@
 import streamlit as st
 from openai import OpenAI
 from mycomponent import mycomponent
+import streamlit.components.v1 as components
+
 import time
 
 # Set page config
@@ -15,27 +17,18 @@ assistant = client.beta.assistants.retrieve(st.secrets["ASSISTANT_ID"])
 # Apply custom CSS
 st.html("""
         <style>
-            #MainMenu {visibility: hidden}
-            header {visibility: hidden}
-            footer {visibility: hidden}
-            .stApp {
-                background-image: url('https://www.nicepng.com/png/full/859-8598719_apple-iphone-xs-max-gold-vector-iphone-x.png');
-                background-repeat: no-repeat;
-                background-size: contain;
-                background-position: center;
-                height: 100vh; /* Ensure full viewport height coverage */
-            }
-            .block-container {
-                padding-left: 36rem;
-                padding-right: 36rem;
+                header {
+                    display: none !important;
+                }
+                
+                .block-container {
+                    padding: 0px;
+                }
+                
+                [data-testid="stBottomBlockContainer"] > div {
+                    padding: 0px !important;
+                }
 
-            }
-            [data-testid="stBottom"] > div {
-                background: transparent;
-                padding-left: 31rem;
-                padding-right: 31rem;
-            }      
-            
         </style>
         """)
 
@@ -93,6 +86,11 @@ if "inactivity_state" not in st.session_state:
 if "messages" not in st.session_state:
     st.session_state.messages = [{"role": "assistant",
                                   "items": [
+                                      {"type": "image",
+                                       "content": "firstpic.png"}],
+                                  "first": True},
+                                 {"role": "assistant",
+                                  "items": [
                                       {"type": "text",
                                        "content": "Nice pick! 🤩"}],
                                   "first": True},
@@ -107,7 +105,11 @@ if "messages" not in st.session_state:
 
 
 for message in st.session_state.messages:
-    with st.chat_message(message["role"]):
+    if message["role"] == "assistant":
+        avatar = "eva.png"
+    else:
+        avatar = None
+    with st.chat_message(message["role"], avatar=avatar):
         for item in message["items"]:
             item_type = item["type"]
             if item_type == "text":
@@ -116,8 +118,7 @@ for message in st.session_state.messages:
                 else:
                     st.write_stream(stream_data(item["content"]))
             elif item_type == "image":
-                for image in item["content"]:
-                    st.html(image)
+                st.image(item["content"], width=100)
             elif item_type == "code_input":
                 with st.status("Code", state="complete"):
                     st.code(item["content"])
@@ -163,23 +164,49 @@ for message in st.session_state.messages:
             elif item_type == "spinner" and message["first"] is True:
                 with st.spinner('Processing payment'):
                     time.sleep(3)
-                message["first"] = False
+                st.session_state.messages.remove({"role": "assistant",
+                                      "items": [{"type": "spinner"}],
+                                      "first": True})
+                st.rerun()
         message["first"] = False
 
 if st.session_state.prompt_message == "Your shipping address:":
     st.session_state.prompt_message = ""
     st.session_state.aaa = True
     st.markdown("")
-    st.markdown("")
-    st.markdown("")
-    st.markdown("")
-    st.markdown("")
-
-
+    st.html("""
+            <style>
+                [data-testid="stBottom"] > div {
+                display: none;
+                }
+            </style>
+            """)
 
     st.session_state.user_address = mycomponent()
+elif st.session_state.aaa == True:
 
-elif prompt:= st.chat_input(st.session_state.prompt_message):
+    st.session_state.user_address = mycomponent()
+    st.session_state.messages.append({"role": "user",
+                                      "items": [
+                                          {"type": "text",
+                                           "content": st.session_state.user_address
+                                           }],
+                                      "first": False}
+                                     )
+    st.session_state.messages.append({"role": "assistant",
+                                      "items":[
+                                          {"type": "text",
+                                           "content": "Your order total is $112. How would you like to pay?"}
+                                      ],
+                                      "first": True})
+    st.session_state.messages.append({"role": "assistant",
+                                      "items": [{"type": "pay"}],
+                                      "first": True})
+    st.session_state.aaa = False
+    st.rerun()
+
+
+if prompt := st.chat_input(st.session_state.prompt_message):
     st.session_state.messages.append({"role": "user",
                                         "items": [
                                             {"type": "text",
@@ -207,27 +234,6 @@ elif prompt:= st.chat_input(st.session_state.prompt_message):
                                                    }],
                                          "first": True})
         st.rerun()
-elif st.session_state.aaa == True:
-
-    st.session_state.user_address = mycomponent()
-    st.session_state.messages.append({"role": "user",
-                                      "items": [
-                                          {"type": "text",
-                                           "content": st.session_state.user_address
-                                           }],
-                                      "first": False}
-                                     )
-    st.session_state.messages.append({"role": "assistant",
-                                      "items":[
-                                          {"type": "text",
-                                           "content": "Your order total is $112. How would you like to pay?"}
-                                      ],
-                                      "first": True})
-    st.session_state.messages.append({"role": "assistant",
-                                      "items": [{"type": "pay"}],
-                                      "first": True})
-    st.session_state.aaa = False
-    st.rerun()
 
 
 if st.session_state.inactivity_state != "active":
