@@ -61,6 +61,7 @@ def payment_message():
                                            "content": "You can come back here anytime to check your delivery status."}
                                       ],
                                       "first": True})
+    st.session_state.inactivity_state = "end"
 
 # Create a new thread
 if "thread_id" not in st.session_state:
@@ -100,29 +101,19 @@ if "messages2" not in st.session_state:
 
 
 # UI
-# Apply custom CSS
 st.html("""
         <style>
-            #MainMenu {visibility: hidden}
-            header {visibility: hidden}
-            footer {visibility: hidden}
-            .stApp {
-                background-image: url('https://www.nicepng.com/png/full/859-8598719_apple-iphone-xs-max-gold-vector-iphone-x.png');
-                background-repeat: no-repeat;
-                background-size: contain;
-                background-position: center;
-                height: 100vh; /* Ensure full viewport height coverage */
-            }
-            .block-container {
-                padding-left: 36rem;
-                padding-right: 36rem;
+                header {
+                    display: none !important;
+                }
 
-            }
-            [data-testid="stBottom"] > div {
-                background: transparent;
-                padding-left: 31rem;
-                padding-right: 31rem;
-            }      
+                .block-container {
+                    padding: 0px;
+                }
+
+                [data-testid="stBottomBlockContainer"] > div {
+                    padding: 0px !important;
+                }
 
         </style>
         """)
@@ -145,7 +136,7 @@ for message in st.session_state.messages2:
                 with col1:
                     if st.button("Add Items", disabled=not message["first"]):
                         st.markdown("Not Supported")
-                        message["first"] = False
+
                 with col2:
                     if st.button("Checkout", disabled=not message["first"]):
                         st.session_state.inactivity_state = "confirm"
@@ -200,7 +191,10 @@ for message in st.session_state.messages2:
             elif item_type == "spinner" and message["first"] is True:
                 with st.spinner(item["content"]):
                     time.sleep(3)
-                message["first"] = False
+                st.session_state.messages2.remove({"role": "assistant",
+                                      "items": [{"type": "spinner", "content": item["content"]}],
+                                      "first": True})
+                st.rerun()
 
 
 if prompt := st.chat_input(st.session_state.prompt_message):
