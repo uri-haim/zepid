@@ -2,12 +2,11 @@
   <body>
     <!DOCTYPE html>
   <head>
-    <title>Place Autocomplete Example</title>
     <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCy4nYT3DiwhyCoN5Yz1jqWCLEwQpt1YWk&libraries=places"></script>
     <style>
   .styled-input {
     width: 100%;
-    max-width: 1500px; /* Adjust as needed */
+    max-width: 1000px; /* Adjust as needed */
     padding: 10px 15px;
     font-size: 16px;
     color: #6c757d;
@@ -26,13 +25,11 @@
 
   </head>
   <body>
-    <input id="autocomplete" class="styled-input" placeholder="600 Pennsylvania Avenue NW, Washington, DC 20500" >
+    <input id="autocomplete" class="styled-input" placeholder="1600 Pennsylvania Avenue NW, Washington, DC 20500" >
     <br> <br>
-
   </body>
 
     <script>
-
 
       function initAutocomplete() {
         var autocomplete = new google.maps.places.Autocomplete(
@@ -80,6 +77,19 @@
 
       // ----------------------------------------------------
       // Now modify this part of the code to fit your needs:
+    // Timer functionality
+    var timer;
+    var timeoutDuration = 10000; // 10 seconds
+
+    function resetTimer() {
+      clearTimeout(timer);
+      timer = setTimeout(function() {
+        sendDataToPython({ value: "timeout" });
+      }, timeoutDuration);
+    }
+
+    window.addEventListener('focus', resetTimer);
+    window.addEventListener('keydown', resetTimer);
 
       // Hook things up!
       window.addEventListener("message", function (event) {
@@ -90,6 +100,7 @@
 
       // Hack to autoset the iframe height.
       window.addEventListener("load", function () {
+        resetTimer();
         window.setTimeout(function () {
           setFrameHeight(document.documentElement.clientHeight)
         }, 0);
