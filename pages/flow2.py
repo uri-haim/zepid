@@ -23,15 +23,15 @@ assistant = client.beta.assistants.retrieve(st.secrets["ASSISTANT_ID"])
 # Apply custom CSS
 st.html("""
         <style>
+            html {
+                font-size: 20px !important;
+            }            
             #MainMenu {visibility: hidden}
             #header {visibility: hidden}
             #footer {visibility: hidden}
             .block-container {
-                padding-top: 3rem;
-                padding-bottom: 2rem;
-                padding-left: 3rem;
-                padding-right: 3rem;
-                }
+                    padding: 0px;
+            }
         </style>
         """)
 
@@ -119,7 +119,11 @@ st.html("""
         """)
 
 for message in st.session_state.messages2:
-    with st.chat_message(message["role"]):
+    if message["role"] == "assistant":
+        avatar = "eva.png"
+    else:
+        avatar = None
+    with st.chat_message(message["role"], avatar=avatar):
         for item in message["items"]:
             item_type = item["type"]
             if item_type == "text":
@@ -198,6 +202,9 @@ for message in st.session_state.messages2:
 
 
 if prompt := st.chat_input(st.session_state.prompt_message):
+
+    if prompt == "1":
+        st.switch_page("chat_app.py")
 
     st.session_state.messages2.append({"role": "user",
                                         "items": [
