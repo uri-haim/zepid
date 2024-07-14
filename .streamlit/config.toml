@@ -1,6 +1,8 @@
 [server]
-maxUploadSize = 20
 enableStaticServing = false
 
 [client]
 showSidebarNavigation = false
+
+[theme]
+base = "light"
