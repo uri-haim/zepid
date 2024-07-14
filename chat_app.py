@@ -1,7 +1,6 @@
 import streamlit as st
 from openai import OpenAI
 from mycomponent import mycomponent
-import streamlit.components.v1 as components
 
 import time
 
@@ -17,6 +16,9 @@ assistant = client.beta.assistants.retrieve(st.secrets["ASSISTANT_ID"])
 # Apply custom CSS
 st.html("""
         <style>
+                html {
+                    font-size: 20px !important;
+                }
                 header {
                     display: none !important;
                 }
@@ -28,6 +30,7 @@ st.html("""
                 [data-testid="stBottomBlockContainer"] > div {
                     padding: 0px !important;
                 }
+                
 
         </style>
         """)
@@ -73,15 +76,6 @@ if "will_sleep" not in st.session_state:
 
 if "inactivity_state" not in st.session_state:
     st.session_state.inactivity_state = "active"
-
-
-# b1,b2 = st.columns(2)
-# with b1:
-#     if st.button("flow1"):
-#         st.switch_page("chat_app.py")
-# with b2:
-#     if st.button("flow2"):
-#         st.switch_page("pages/flow2.py")
 
 if "messages" not in st.session_state:
     st.session_state.messages = [{"role": "assistant",
@@ -132,7 +126,7 @@ for message in st.session_state.messages:
                         st.markdown("Not Supported")
                         message["first"] = False
                 with col2:
-                    if st.button("Checkout", disabled=not message["first"]):
+                    if st.button("Pay", disabled=not message["first"]):
                         st.session_state.prompt_message = "John Dow"
                         st.session_state.will_sleep = 10
                         st.session_state.inactivity_state = "name"
@@ -207,6 +201,8 @@ elif st.session_state.aaa == True:
 
 
 if prompt := st.chat_input(st.session_state.prompt_message):
+    if prompt == "2":
+        st.switch_page("pages/flow2.py")
     st.session_state.messages.append({"role": "user",
                                         "items": [
                                             {"type": "text",
@@ -214,11 +210,6 @@ if prompt := st.chat_input(st.session_state.prompt_message):
                                             }],
                                       "first": False})
 
-    # client.beta.threads.messages.create(
-        #     thread_id=st.session_state.thread_id,
-        #     role="user",
-        #     content=prompt
-        # )
 
     with st.chat_message("user"):
         st.markdown(prompt)
