@@ -180,24 +180,35 @@ if st.session_state.prompt_message == "Your shipping address:":
 elif st.session_state.aaa == True:
 
     st.session_state.user_address = mycomponent()
-    st.session_state.messages.append({"role": "user",
-                                      "items": [
-                                          {"type": "text",
-                                           "content": st.session_state.user_address
-                                           }],
-                                      "first": False}
-                                     )
-    st.session_state.messages.append({"role": "assistant",
-                                      "items":[
-                                          {"type": "text",
-                                           "content": "Your order total is $112. How would you like to pay?"}
-                                      ],
-                                      "first": True})
-    st.session_state.messages.append({"role": "assistant",
-                                      "items": [{"type": "pay"}],
-                                      "first": True})
-    st.session_state.aaa = False
-    st.rerun()
+    if st.session_state.user_address == "timeout":
+        st.session_state.messages.append({"role": "assistant",
+                                          "items": [
+                                              {"type": "text",
+                                               "content": "Start typing your address and select from the list below"}
+                                          ],
+                                          "first": True})
+        st.session_state.aaa = False
+        st.session_state.prompt_message = "Your shipping address:"
+        st.rerun()
+    else:
+        st.session_state.messages.append({"role": "user",
+                                          "items": [
+                                              {"type": "text",
+                                               "content": st.session_state.user_address
+                                               }],
+                                          "first": False}
+                                         )
+        st.session_state.messages.append({"role": "assistant",
+                                          "items":[
+                                              {"type": "text",
+                                               "content": "Your order total is $112. How would you like to pay?"}
+                                          ],
+                                          "first": True})
+        st.session_state.messages.append({"role": "assistant",
+                                          "items": [{"type": "pay"}],
+                                          "first": True})
+        st.session_state.aaa = False
+        st.rerun()
 
 
 if prompt := st.chat_input(st.session_state.prompt_message):
