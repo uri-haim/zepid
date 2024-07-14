@@ -146,6 +146,8 @@
 </head>
 <body>
     <div class="sidebar">
+        <img src="sidebarpic.webp" alt="Sidebar Image" style="width: 100%; height: auto;">
+        <button id="addToBagBtn" style="width: 100%; padding: 10px; margin-top: 10px; background-color: #4CAF50; color: white; border: none; cursor: pointer;">Add to Bag</button>
         <h2>Current State:</h2>
         <ul>
             <li>Cart initiation</li>
@@ -156,7 +158,7 @@
             <li>Completion</li>
         </ul>
     </div>
-    <div class="main-content">
+    <div id="mainContent" class="main-content" style="display: none;">
         <div class="frame-container">
             <img src="iphoneframe.png" alt="iPhone frame" class="iphone-frame">
             <img src="battery.png" alt="Battery Icon" class="battery-icon">
@@ -166,11 +168,27 @@
                     <span class="eva-text">Eva</span>
                     <img src="greenV.jpeg" alt="Small Icon" class="small-icon">
                 </div>
-                <iframe id="myIframe" src="https://8v787khgbeuvpdcyhku6vp.streamlit.app/?embedded=true" frameborder="0"></iframe>
+                <iframe id="myIframe" src="https://8v787khgbeuvpdcyhku6vp.streamlit.app/?embedded=true" frameborder="0"></iframe>-->
+<!--                 <iframe id="myIframe" src="http://localhost:8501/" frameborder="0"></iframe> -->
+
             </div>
         </div>
     </div>
     <script>
+
+        document.getElementById('addToBagBtn').addEventListener('click', function() {
+          document.getElementById('mainContent').style.display = 'block';
+                      document.querySelectorAll('.sidebar li').forEach(function(el) {
+                el.classList.remove('selected');
+            });
+
+          const secondTopic = document.querySelector('.sidebar ul li:nth-child(2)');
+            secondTopic.classList.add('selected');
+
+
+          var iframe = document.getElementById('myIframe');
+          iframe.src = iframe.src;
+        })
         document.addEventListener('DOMContentLoaded', function() {
             const firstTopic = document.querySelector('.sidebar ul li:nth-child(1)');
             firstTopic.classList.add('selected');
