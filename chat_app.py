@@ -1,7 +1,7 @@
 import streamlit as st
 from openai import OpenAI
 from mycomponent import mycomponent
-
+from inactiveuser import inactiveuser
 import time
 
 # Set page config
@@ -19,18 +19,15 @@ st.html("""
                 html {
                     font-size: 20px !important;
                 }
-                header {
-                    display: none !important;
-                }
-                
+
                 .block-container {
                     padding: 0px;
                 }
-                
+
                 [data-testid="stBottomBlockContainer"] > div {
                     padding: 0px !important;
                 }
-                
+
 
         </style>
         """)
@@ -61,21 +58,23 @@ def payment_message():
                                       ],
                                       "first": True})
 
-if "aaa" not in st.session_state:
-    st.session_state.aaa = False
+if "inactive_counter" not in st.session_state:
+    st.session_state.inactive_counter = 0
 
 if "user_name" not in st.session_state:
     st.session_state.user_name = "User"
 
-
 if "prompt_message" not in st.session_state:
     st.session_state.prompt_message = ""
 
-if "will_sleep" not in st.session_state:
-    st.session_state.will_sleep = 0
-
 if "inactivity_state" not in st.session_state:
     st.session_state.inactivity_state = "active"
+
+if "flow_state" not in st.session_state:
+    st.session_state.flow_state = "begin"
+
+if "user_address" not in st.session_state:
+    st.session_state.user_address = "init"
 
 if "messages" not in st.session_state:
     st.session_state.messages = [{"role": "assistant",
@@ -128,8 +127,7 @@ for message in st.session_state.messages:
                 with col2:
                     if st.button("Pay", disabled=not message["first"]):
                         st.session_state.prompt_message = "John Dow"
-                        st.session_state.will_sleep = 10
-                        st.session_state.inactivity_state = "name"
+                        st.session_state.flow_state = "name"
                         message["first"] = False
                         st.session_state.messages.append({"role": "assistant",
                                                           "items": [
@@ -164,54 +162,41 @@ for message in st.session_state.messages:
                 st.rerun()
         message["first"] = False
 
-if st.session_state.prompt_message == "Your shipping address:":
-    st.session_state.prompt_message = ""
-    st.session_state.aaa = True
+if st.session_state.flow_state == "address":
     st.markdown("")
-    st.html("""
-            <style>
-                [data-testid="stBottom"] > div {
-                display: none;
-                }
-            </style>
-            """)
-
-    st.session_state.user_address = mycomponent()
-elif st.session_state.aaa == True:
-
-    st.session_state.user_address = mycomponent()
-    if st.session_state.user_address == "timeout":
-        st.session_state.messages.append({"role": "assistant",
-                                          "items": [
-                                              {"type": "text",
-                                               "content": "Start typing your address and select from the list below"}
-                                          ],
-                                          "first": True})
-        st.session_state.aaa = False
-        st.session_state.prompt_message = "Your shipping address:"
+    if st.session_state.user_address == "init":
+        st.session_state.user_address = mycomponent(timeout=st.session_state.inactive_counter)
+    elif st.session_state.user_address == None:
+        st.session_state.user_address = mycomponent(timeout=st.session_state.inactive_counter)
+        if st.session_state.user_address == "timeout":
+            st.session_state.user_address = "init"
+            st.session_state.inactive_counter += 1
+            st.session_state.messages.append({"role": "assistant",
+                                                      "items": [
+                                                          {"type": "text",
+                                                           "content": "Start typing your address and select from the list below"}
+                                                      ],
+                                                      "first": True})
+        else:
+            st.session_state.messages.append({"role": "user",
+                                              "items": [
+                                                  {"type": "text",
+                                                   "content": st.session_state.user_address
+                                                   }],
+                                              "first": False}
+                                             )
+            st.session_state.messages.append({"role": "assistant",
+                                              "items":[
+                                                  {"type": "text",
+                                                   "content": "Your order total is $112. How would you like to pay?"}
+                                              ],
+                                              "first": True})
+            st.session_state.messages.append({"role": "assistant",
+                                              "items": [{"type": "pay"}],
+                                              "first": True})
+            st.session_state.flow_state = "payment"
         st.rerun()
-    else:
-        st.session_state.messages.append({"role": "user",
-                                          "items": [
-                                              {"type": "text",
-                                               "content": st.session_state.user_address
-                                               }],
-                                          "first": False}
-                                         )
-        st.session_state.messages.append({"role": "assistant",
-                                          "items":[
-                                              {"type": "text",
-                                               "content": "Your order total is $112. How would you like to pay?"}
-                                          ],
-                                          "first": True})
-        st.session_state.messages.append({"role": "assistant",
-                                          "items": [{"type": "pay"}],
-                                          "first": True})
-        st.session_state.aaa = False
-        st.rerun()
-
-
-if prompt := st.chat_input(st.session_state.prompt_message):
+elif prompt := st.chat_input(st.session_state.prompt_message):
     if prompt == "2":
         st.switch_page("pages/flow2.py")
     st.session_state.messages.append({"role": "user",
@@ -220,13 +205,11 @@ if prompt := st.chat_input(st.session_state.prompt_message):
                                             "content": prompt
                                             }],
                                       "first": False})
-
-
     with st.chat_message("user"):
         st.markdown(prompt)
-    if st.session_state.prompt_message == "John Dow":
-        st.session_state.prompt_message = "Your shipping address:"
+    if st.session_state.flow_state == "name":
         st.session_state.inactivity_state = "active"
+        st.session_state.flow_state = "address"
         st.session_state.user_name = prompt
         m = "Hi " + st.session_state.user_name +", what is the shipping address for this order?"
         st.session_state.messages.append({"role": "assistant",
@@ -235,20 +218,26 @@ if prompt := st.chat_input(st.session_state.prompt_message):
                                                    "content": m
                                                    }],
                                          "first": True})
+        st.session_state.prompt_message = ""
         st.rerun()
 
 
-if st.session_state.inactivity_state != "active":
-    time.sleep(st.session_state.will_sleep)
-
-if st.session_state.inactivity_state == "name":
+if st.session_state.flow_state == "name" and st.session_state.inactive_counter < 2:
+    st.session_state.inactivity_state = inactiveuser(timeout=10000)
+    st.session_state.inactive_counter += 1
+if st.session_state.inactivity_state == "timeout":
+    st.session_state.inactive_counter += 1
+    st.session_state.inactivity_state = "active"
     st.session_state.messages.append({"role": "assistant",
                                        "items": [
                                            {"type": "text",
                                             "content": "Are you still there? Just a few more details so I can calculate your order total. What’s your name?"}],
                                        "first": True})
-    st.session_state.inactivity_state = "active"
-    st.session_state.will_sleep = 0
     st.rerun()
-
-
+scroll_script = f"""
+<script>
+  var textArea = document.getElementById("root");
+  textArea.scrollTop = textArea.scrollHeight;
+</script>
+"""
+st.markdown(scroll_script, unsafe_allow_html=True)
