@@ -5,16 +5,18 @@
     <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCy4nYT3DiwhyCoN5Yz1jqWCLEwQpt1YWk&libraries=places"></script>
     <style>
   .styled-input {
-    width: 100%;
-    max-width: 1000px; /* Adjust as needed */
+    width: 84%;
+    # max-width: 1000px; /* Adjust as needed */
     padding: 10px 15px;
-    font-size: 16px;
+    margin-left: 8%;
+    font-size: 20px;
     color: #6c757d;
     background-color: #f8f9fa;
     border: 1px solid #dfe2e5;
     border-radius: 5px;
     outline: none;
     transition: box-shadow 0.2s ease;
+    bottom: 0px;
   }
 
   .styled-input:focus {
@@ -38,14 +40,11 @@
 
         autocomplete.addListener('place_changed', function () {
           var place = autocomplete.getPlace();
-          var latitude = place.geometry.location.lat();
-          var longitude = place.geometry.location.lng();
           var fa = place.formatted_address;
 
           sendDataToPython({
-            // value: latitude + "," + longitude,
             value: fa,
-            dataType: "json",
+            dataType: "json"
           });
         });
       }
@@ -93,8 +92,10 @@
 
       // Hook things up!
       window.addEventListener("message", function (event) {
+        resetTimer();
+
         if (event.data.type !== "streamlit:render") return;
-        // Access values sent from Python here!
+        // timeoutDuration = event.data.args.timeout;
       });
       init();
 
@@ -102,10 +103,12 @@
       window.addEventListener("load", function () {
         resetTimer();
         window.setTimeout(function () {
-          setFrameHeight(document.documentElement.clientHeight)
+          setFrameHeight(document.documentElement.clientHeight);
         }, 0);
       });
-      setFrameHeight(100);
+      // setFrameHeight(100);
+      resetTimer();
+
 
     </script>
   </body>
