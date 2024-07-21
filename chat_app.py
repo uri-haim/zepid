@@ -2,6 +2,7 @@ import streamlit as st
 from openai import OpenAI
 from mycomponent import mycomponent
 from inactiveuser import inactiveuser
+from replacebutton import replacebutton
 import time
 
 # Set page config
@@ -125,7 +126,7 @@ for message in st.session_state.messages:
                         st.markdown("Not Supported")
                         message["first"] = False
                 with col2:
-                    if st.button("Pay", disabled=not message["first"]):
+                    if st.button("Checkout", disabled=not message["first"]):
                         st.session_state.prompt_message = "John Dow"
                         st.session_state.flow_state = "name"
                         message["first"] = False
@@ -139,7 +140,7 @@ for message in st.session_state.messages:
                 col1, col2, col3 = st.columns(3)
                 isDisabled = not message["first"]
                 with col1:
-                    if st.button("gpay", disabled=isDisabled):
+                    if st.button("paypal", disabled=isDisabled):
                         payment_message()
                         message["first"] = False
 
@@ -162,6 +163,7 @@ for message in st.session_state.messages:
                 st.rerun()
         message["first"] = False
 
+a = replacebutton()
 if st.session_state.flow_state == "address":
     st.html("""
     <style>
