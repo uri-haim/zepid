@@ -36,6 +36,11 @@
     var timer;
     var timeoutDuration = 10000;
     const doc = window.parent.document;
+    var wrapIframe = doc.querySelector('[title="inactiveuser.inactiveuser"]');
+    wrapIframe.parentElement.style.height = '0px';
+    wrapIframe.style.height = '0px';
+
+
     const inputs = doc.querySelectorAll('textarea');
       inputs.forEach(input => {
     input.addEventListener('keydown', function(event) {
