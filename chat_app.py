@@ -3,12 +3,12 @@ from openai import OpenAI
 from mycomponent import mycomponent
 from inactiveuser import inactiveuser
 from replacebutton import replacebutton
+import streamlit.components.v1 as components
+
 import time
 
 # Set page config
-st.set_page_config(page_title="Zepi",
-                   layout='wide')
-
+st.set_page_config(page_title="Zepi",layout='wide')
 
 # Initialise the OpenAI client, and retrieve the assistant
 client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
@@ -28,6 +28,10 @@ st.html("""
                 [data-testid="stBottomBlockContainer"] > div {
                     padding: 0px !important;
                 }
+                .stChatMessage {
+                    padding: 0px;
+                }
+             
 
 
         </style>
@@ -137,21 +141,21 @@ for message in st.session_state.messages:
                                                               {"type": "text", "content": "what is your name?"}],
                                                           "first": True})
             elif item_type == "pay":
-                col1, col2, col3 = st.columns(3)
+                # col1, col2, col3 = st.columns(3)
                 isDisabled = not message["first"]
-                with col1:
-                    if st.button("paypal", disabled=isDisabled):
-                        payment_message()
-                        message["first"] = False
+                #with col1:
+                if st.button("paypal", disabled=isDisabled):
+                    payment_message()
+                    message["first"] = False
 
-                with col2:
-                    if st.button("apple", disabled=isDisabled ):
-                        payment_message()
-                        message["first"] = False
-                with col3:
-                    if st.button("credit", disabled=isDisabled ):
-                        payment_message()
-                        message["first"] = False
+                #with col2:
+                if st.button("apple", disabled=isDisabled ):
+                    payment_message()
+                    message["first"] = False
+                #with col3:
+                if st.button("credit", disabled=isDisabled ):
+                    payment_message()
+                    message["first"] = False
             elif item_type == "success":
                 st.success(item["content"])
             elif item_type == "spinner" and message["first"] is True:
@@ -243,6 +247,40 @@ if st.session_state.inactivity_state == "timeout":
                                             "content": "Are you still there? Just a few more details so I can calculate your order total. What’s your name?"}],
                                        "first": True})
     st.rerun()
+components.html("""
+    <script>
+        const doc = window.parent.document;
+        var wrapIframe = doc.querySelector('[title="st.iframe"]');
+        wrapIframe.parentElement.style.height = '0px';
+        wrapIframe.style.height = '0px';
+
+        const styleSheet = doc.styleSheets[3];
+        //console.log(doc.styleSheets);
+        for (let i = 0; i < styleSheet.cssRules.length; i++) {
+
+          const rule = styleSheet.cssRules[i];
+          if (rule.media)
+          {
+            if (rule.cssText.substring(0,10) != "@media pri")
+            {
+            console.log(rule.cssText);
+            styleSheet.deleteRule(i);
+            i--;
+            }
+          }
+
+          
+          
+          // if (rule.cssText == "@media (max-width: 640px) {\\n  .st-emotion-cache-keje6w { min-width: calc(100% - 1.5rem); }\\n}") {
+            // console.log(i);
+            //console.log(rule);
+            // styleSheet.deleteRule(i);
+            //i--; // Adjust index after deletion
+          //}
+        }
+    </script>
+""")
+
 scroll_script = f"""
 <script>
   var textArea = document.getElementById("root");
