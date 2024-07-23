@@ -1,20 +1,14 @@
 import streamlit as st
 import json
 from openai import OpenAI
+from replacebutton import replacebutton
+from inactiveuser import inactiveuser
 import time
-
-
-
-from openai.types.beta.assistant_stream_event import (
-    ThreadMessageCreated,
-    ThreadMessageDelta,
-    ThreadRunRequiresAction
-    )
+from openai.types.beta.assistant_stream_event import (ThreadMessageCreated,ThreadMessageDelta,ThreadRunRequiresAction)
 from openai.types.beta.threads.text_delta_block import TextDeltaBlock 
 
 # Set page config
-st.set_page_config(page_title="Zepi",
-                   layout='wide')
+st.set_page_config(page_title="Zepi",layout='wide')
 
 # Get secrets
 client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
@@ -23,17 +17,22 @@ assistant = client.beta.assistants.retrieve(st.secrets["ASSISTANT_ID"])
 # Apply custom CSS
 st.html("""
         <style>
-            html {
-                font-size: 20px !important;
-            }            
-            #MainMenu {visibility: hidden}
-            #header {visibility: hidden}
-            #footer {visibility: hidden}
-            .block-container {
+                html {
+                    font-size: 20px !important;
+                }
+
+                .block-container {
                     padding: 0px;
-            }
+                }
+
+                [data-testid="stBottomBlockContainer"] > div {
+                    padding: 0px !important;
+                }
+
+
         </style>
         """)
+
 
 def stream_data(textdata):
     for word in textdata.split(" "):
@@ -61,7 +60,8 @@ def payment_message():
                                            "content": "You can come back here anytime to check your delivery status."}
                                       ],
                                       "first": True})
-    st.session_state.inactivity_state = "end"
+    st.session_state.flow_state = "end"
+
 
 # Create a new thread
 if "thread_id" not in st.session_state:
@@ -70,6 +70,10 @@ if "thread_id" not in st.session_state:
     print(st.session_state.thread_id)
 
 st.session_state.prompt_message = ""
+
+if "flow_state" not in st.session_state:
+    st.session_state.flow_state = "begin"
+
 if "user_name" not in st.session_state:
     st.session_state.user_name = "default user"
 
@@ -79,8 +83,11 @@ if "user_address" not in st.session_state:
 if "inactivity_state" not in st.session_state:
     st.session_state.inactivity_state = "active"
 
-if "inactivity_timer" not in st.session_state:
-    st.session_state.inactivity_timer = 10
+if "inactive_counter" not in st.session_state:
+    st.session_state.inactive_counter = 0
+
+if "last_state" not in st.session_state:
+    st.session_state.last_state = "buttons"
 
 # UI
 
@@ -101,22 +108,6 @@ if "messages2" not in st.session_state:
 
 
 # UI
-st.html("""
-        <style>
-                header {
-                    display: none !important;
-                }
-
-                .block-container {
-                    padding: 0px;
-                }
-
-                [data-testid="stBottomBlockContainer"] > div {
-                    padding: 0px !important;
-                }
-
-        </style>
-        """)
 
 for message in st.session_state.messages2:
     if message["role"] == "assistant":
@@ -136,15 +127,16 @@ for message in st.session_state.messages2:
                 for image in item["content"]:
                     st.html(image)
             elif item_type == "buttons":
-                col1, col2 = st.columns([1, 1])
+                col1, col2 = st.columns(2)
                 with col1:
                     if st.button("Add Items", disabled=not message["first"]):
                         st.markdown("Not Supported")
 
                 with col2:
                     if st.button("Checkout", disabled=not message["first"]):
-                        st.session_state.inactivity_state = "confirm"
-                        st.session_state.inactivity_timer = 10
+                        st.session_state.flow_state = "confirm"
+                        st.session_state.inactivity_state = "active"
+                        st.session_state.inactive_counter = 0
                         message["first"] = False
                         st.session_state.messages2.append({"role": "assistant",
                                                           "items": [
@@ -155,14 +147,14 @@ for message in st.session_state.messages2:
                         st.session_state.messages2.append({"role": "assistant",
                                                           "items": [{"type": "confirm"}],
                                                           "first": True})
-
             elif item_type == "confirm":
                 col1, col2 = st.columns([1, 1])
                 with col1:
                     if st.button("Confirm", disabled=not message["first"]):
                         message["first"] = False
-                        st.session_state.inactivity_timer = 12
-                        st.session_state.inactivity_state = "pay"
+                        st.session_state.flow_state = "pay"
+                        st.session_state.pay_offered = True
+                        st.session_state.inactive_counter = 0
                         st.session_state.messages2.append({"role": "assistant",
                                                           "items": [
                                                               {"type": "text",
@@ -176,20 +168,16 @@ for message in st.session_state.messages2:
                         st.markdown("not supported")
                         message["first"] = False
             elif item_type == "pay":
-                col1, col2, col3 = st.columns(3)
                 isDisabled = not message["first"]
-                with col1:
-                    if st.button("gpay", disabled=isDisabled):
-                        payment_message()
-                        message["first"] = False
-                with col2:
-                    if st.button("apple", disabled=isDisabled ):
-                        payment_message()
-                        message["first"] = False
-                with col3:
-                    if st.button("credit", disabled=isDisabled ):
-                        payment_message()
-                        message["first"] = False
+                if st.button("paypal", disabled=isDisabled):
+                    payment_message()
+                    message["first"] = False
+                if st.button("apple", disabled=isDisabled ):
+                    payment_message()
+                    message["first"] = False
+                if st.button("credit", disabled=isDisabled ):
+                    payment_message()
+                    message["first"] = False
             elif item_type == "success":
                 st.success(item["content"])
             elif item_type == "spinner" and message["first"] is True:
@@ -200,6 +188,7 @@ for message in st.session_state.messages2:
                                       "first": True})
                 st.rerun()
 
+a = replacebutton()
 
 if prompt := st.chat_input(st.session_state.prompt_message):
 
@@ -222,18 +211,34 @@ if prompt := st.chat_input(st.session_state.prompt_message):
     with st.chat_message("user"):
         st.markdown(prompt)
 
-    if prompt == "no" and st.session_state.inactivity_state == "pay":
-        st.session_state.messages2.remove({"role": "assistant","items": [{"type": "pay"}],"first": True})
-        st.session_state.messages2.append({"role": "assistant",
-                                           "items": [
-                                               {"type": "text",
-                                                "content": "How would you like to pay (your order total is $112)?"}],
-                                           "first": True})
-        st.session_state.messages2.append({"role": "assistant",
-                                           "items": [{"type": "pay"}],
-                                           "first": True})
+    if prompt == "no" and st.session_state.flow_state == "chat":
+        if st.session_state.last_state == "pay":
+            st.session_state.messages2.remove({"role": "assistant","items": [{"type": "pay"}],"first": True})
+            st.session_state.messages2.append({"role": "assistant",
+                                               "items": [
+                                                   {"type": "text",
+                                                    "content": "How would you like to pay (your order total is $112)?"}],
+                                               "first": True})
+            st.session_state.messages2.append({"role": "assistant",
+                                               "items": [{"type": "pay"}],
+                                               "first": True})
+            st.session_state.flow_state = "pay"
+        elif st.session_state.last_state == "begin":
+            st.session_state.messages2.remove({"role": "assistant","items": [{"type": "buttons"}],"first": True})
+            st.session_state.messages2.append({"role": "assistant", "items": [{"type": "buttons"}], "first": True})
+            st.session_state.flow_state = "begin"
+        elif st.session_state.last_state == "confirm":
+            st.session_state.messages2.remove({"role": "assistant","items": [{"type": "confirm"}],"first": True})
+            st.session_state.messages2.append({"role": "assistant",
+                                               "items": [
+                                                   {"type": "text",
+                                                    "content": "please confirm that " + st.session_state.user_address + "is your shipping address"}],
+                                               "first": True})
+            st.session_state.messages2.append({"role": "assistant", "items": [{"type": "confirm"}], "first": True})
+
+
         st.rerun()
-    elif prompt == "yes" and st.session_state.inactivity_state == "cupon":
+    elif prompt == "yes" and st.session_state.flow_state == "cupon":
         st.session_state.messages2.remove({"role": "assistant", "items": [{"type": "pay"}], "first": True})
         st.session_state.messages2.append({"role": "assistant",
                                            "items": [
@@ -249,7 +254,6 @@ if prompt := st.chat_input(st.session_state.prompt_message):
             stream = client.beta.threads.runs.create(
                 thread_id=st.session_state.thread_id,
                 assistant_id=st.secrets["ASSISTANT_ID"],
-                #tool_choice={"type": "file_search"},
                 stream=True
             )
             assistant_output = []
@@ -304,53 +308,62 @@ if prompt := st.chat_input(st.session_state.prompt_message):
                                                         "content": "Would you like to redeem it now?"},
                                                    ],
                                                    "first": True})
-                st.session_state.inactivity_state = "cupon"
+                st.session_state.flow_state = "cupon"
                 st.rerun()
+            st.session_state.last_state = st.session_state.flow_state
+            st.session_state.flow_state = "chat"
+            st.session_state.inactive_counter = 0
 
-            st.session_state.inactivity_state = "chat"
-            st.session_state.inactivity_timer = 5
 
-if st.session_state.inactivity_state != "active":
-    time.sleep(st.session_state.inactivity_timer)
-
-if st.session_state.inactivity_state == "chat":
-    st.session_state.inactivity_timer = 10
-    st.session_state.inactivity_state = "pay"
-    st.session_state.messages2.append({"role": "assistant",
-                                       "items": [
-                                           {"type": "text",
-                                            "content": "Is there anything else I can help you with?"}],
-                                       "first": True})
-    client.beta.threads.messages.create(
-        thread_id=st.session_state.thread_id,
-        role="assistant",
-        content="Is there anything else I can help you with?"
-    )
-
-    st.rerun()
-elif st.session_state.inactivity_state == "pay":
-    print(st.session_state.inactivity_timer)
-    st.session_state.inactivity_state = "pay2"
-    st.session_state.inactivity_timer = 8
-    st.session_state.messages2.append({"role": "assistant",
-                                       "items": [
-                                           {"type": "text",
-                                            "content": "Is there anything I can do to assist you in making your purchase decision?"}],
-                                       "first": True})
-    st.rerun()
-elif st.session_state.inactivity_state == "pay2":
-    st.session_state.inactivity_state = "give_up"
-    st.session_state.messages2.append({"role": "assistant",
-                                       "items": [
-                                           {"type": "text",
-                                            "content": "May I ask what’s keeping you from completing the order?"}],
-                                       "first": True})
-    st.rerun()
-elif st.session_state.inactivity_state == "confirm":
+if st.session_state.inactive_counter < 2:
+    timeout = 0
+    if st.session_state.flow_state == "chat":
+        timeout = 10000
+    elif st.session_state.flow_state == "pay":
+        timeout = 10000
+    elif st.session_state.flow_state == "pay2":
+        timeout = 8000
+    elif st.session_state.flow_state == "confirm":
+        timeout = 10000
+    if timeout > 0:
+        st.session_state.inactivity_state = inactiveuser(timeout=timeout)
+        st.session_state.inactive_counter += 1
+if st.session_state.inactivity_state == "timeout":
     st.session_state.inactivity_state = "active"
-    st.session_state.messages2.append({"role": "assistant",
-                                       "items": [
-                                           {"type": "text",
-                                            "content": "Please confirm your shipping address so I can calculate your order total"}],
-                                       "first": True})
+    if st.session_state.flow_state == "chat":
+        st.session_state.inactive_counter += 1
+        st.session_state.messages2.append({"role": "assistant",
+                                           "items": [
+                                               {"type": "text",
+                                                "content": "Is there anything else I can help you with?"}],
+                                           "first": True})
+        client.beta.threads.messages.create(
+            thread_id=st.session_state.thread_id,
+            role="assistant",
+            content="Is there anything else I can help you with?"
+        )
+    elif st.session_state.flow_state == "pay":
+        st.session_state.flow_state = "pay2"
+        st.session_state.inactive_counter += 1
+        st.session_state.messages2.append({"role": "assistant",
+                                           "items": [
+                                               {"type": "text",
+                                                "content": "Is there anything I can do to assist you in making your purchase decision?"}],
+                                           "first": True})
+    elif st.session_state.flow_state == "pay2":
+        st.session_state.inactive_counter += 1
+        st.session_state.messages2.append({"role": "assistant",
+                                           "items": [
+                                               {"type": "text",
+                                                "content": "May I ask what’s keeping you from completing the order?"}],
+                                           "first": True})
+        st.session_state.flow_state = "giveup"
+        st.session_state.inactivity_state = "active"
+    elif st.session_state.flow_state == "confirm":
+        st.session_state.inactive_counter += 1
+        st.session_state.messages2.append({"role": "assistant",
+                                           "items": [
+                                               {"type": "text",
+                                                "content": "Please confirm your shipping address so I can calculate your order total"}],
+                                           "first": True})
     st.rerun()
