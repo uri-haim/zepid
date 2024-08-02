@@ -44,6 +44,42 @@ def stream_data(textdata):
         yield word + " "
         time.sleep(0.08)
 
+def remove_table_margins():
+    components.html("""
+        <script>
+            const doc = window.parent.document;
+            var wrapIframe = doc.querySelector('[title="st.iframe"]');
+            wrapIframe.parentElement.style.height = '0px';
+            wrapIframe.style.height = '0px';
+
+            const styleSheet = doc.styleSheets[3];
+            //console.log(doc.styleSheets);
+            for (let i = 0; i < styleSheet.cssRules.length; i++) {
+
+              const rule = styleSheet.cssRules[i];
+              if (rule.media)
+              {
+                if (rule.cssText.substring(0,10) != "@media pri")
+                {
+                // console.log(rule.cssText);
+                styleSheet.deleteRule(i);
+                i--;
+                }
+              }
+
+
+
+              // if (rule.cssText == "@media (max-width: 640px) {\\n  .st-emotion-cache-keje6w { min-width: calc(100% - 1.5rem); }\\n}") {
+                // console.log(i);
+                //console.log(rule);
+                // styleSheet.deleteRule(i);
+                //i--; // Adjust index after deletion
+              //}
+            }
+        </script>
+    """)
+
+
 def payment_message():
     st.session_state.flow_state = "completed"
     ref.set("6")
@@ -146,7 +182,7 @@ for message in st.session_state.messages:
                     if st.button("Checkout", disabled=not message["first"]):
                         st.session_state.prompt_message = "John Dow"
                         st.session_state.flow_state = "name"
-                        ref.set("3")
+                        ref.set("2")
                         message["first"] = False
                         st.session_state.messages.append({"role": "assistant",
                                                           "items": [
@@ -175,8 +211,17 @@ for message in st.session_state.messages:
                                       "first": True})
                 st.rerun()
         message["first"] = False
-
+remove_table_margins()
 a = replacebutton()
+
+scroll_script = f"""
+<script>
+  var textArea = document.getElementById("root");
+  textArea.scrollTop = textArea.scrollHeight;
+</script>
+"""
+st.markdown(scroll_script, unsafe_allow_html=True)
+
 if st.session_state.flow_state == "address":
     st.html("""
     <style>
@@ -185,7 +230,6 @@ if st.session_state.flow_state == "address":
             }    
     </style>
     """)
-    st.markdown("")
     if st.session_state.user_address == "init":
         st.session_state.user_address = mycomponent(timeout=st.session_state.inactive_counter)
     elif st.session_state.user_address == None:
@@ -248,6 +292,7 @@ if prompt := st.chat_input(st.session_state.prompt_message):
 
 if st.session_state.flow_state == "name" and st.session_state.inactive_counter < 2:
     st.session_state.inactivity_state = inactiveuser(timeout=10000)
+    ref.set("3")
     st.session_state.inactive_counter += 1
 if st.session_state.inactivity_state == "timeout":
     st.session_state.inactive_counter += 1
@@ -258,45 +303,5 @@ if st.session_state.inactivity_state == "timeout":
                                             "content": "Are you still there? Just a few more details so I can calculate your order total. What’s your name?"}],
                                        "first": True})
     st.rerun()
-components.html("""
-    <script>
-        const doc = window.parent.document;
-        var wrapIframe = doc.querySelector('[title="st.iframe"]');
-        wrapIframe.parentElement.style.height = '0px';
-        wrapIframe.style.height = '0px';
 
-        const styleSheet = doc.styleSheets[3];
-        //console.log(doc.styleSheets);
-        for (let i = 0; i < styleSheet.cssRules.length; i++) {
-
-          const rule = styleSheet.cssRules[i];
-          if (rule.media)
-          {
-            if (rule.cssText.substring(0,10) != "@media pri")
-            {
-            // console.log(rule.cssText);
-            styleSheet.deleteRule(i);
-            i--;
-            }
-          }
-
-          
-          
-          // if (rule.cssText == "@media (max-width: 640px) {\\n  .st-emotion-cache-keje6w { min-width: calc(100% - 1.5rem); }\\n}") {
-            // console.log(i);
-            //console.log(rule);
-            // styleSheet.deleteRule(i);
-            //i--; // Adjust index after deletion
-          //}
-        }
-    </script>
-""")
-
-scroll_script = f"""
-<script>
-  var textArea = document.getElementById("root");
-  textArea.scrollTop = textArea.scrollHeight;
-</script>
-"""
-st.markdown(scroll_script, unsafe_allow_html=True)
 
