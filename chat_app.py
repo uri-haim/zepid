@@ -4,7 +4,9 @@ from mycomponent import mycomponent
 from inactiveuser import inactiveuser
 from replacebutton import replacebutton
 import streamlit.components.v1 as components
-
+import firebase_admin
+from firebase_admin import credentials
+from firebase_admin import db
 import time
 
 # Set page config
@@ -43,6 +45,8 @@ def stream_data(textdata):
         time.sleep(0.08)
 
 def payment_message():
+    st.session_state.flow_state = "completed"
+    ref.set("6")
     st.session_state.messages.append({"role": "assistant",
                                       "items": [{"type": "spinner"}],
                                       "first": True})
@@ -75,7 +79,17 @@ if "prompt_message" not in st.session_state:
 if "inactivity_state" not in st.session_state:
     st.session_state.inactivity_state = "active"
 
+if "mydb" not in firebase_admin._apps:
+    cred = credentials.Certificate("zepi-83415-firebase-adminsdk-ynoav-2ed077dd36.json")
+    # Initialize the app with a service account, granting admin privileges
+    mydb = firebase_admin.initialize_app(cred, {
+        'databaseURL': 'https://zepi-83415-default-rtdb.firebaseio.com'},"mydb")
+else:
+    mydb = firebase_admin.get_app("mydb")
+ref = db.reference('/state',mydb)
+
 if "flow_state" not in st.session_state:
+    ref.set("1")
     st.session_state.flow_state = "begin"
 
 if "user_address" not in st.session_state:
@@ -100,7 +114,6 @@ if "messages" not in st.session_state:
                                  {"role": "assistant",
                                   "items": [{"type": "buttons"}],
                                   "first": True}]
-
 
 for message in st.session_state.messages:
     if message["role"] == "assistant":
@@ -133,6 +146,7 @@ for message in st.session_state.messages:
                     if st.button("Checkout", disabled=not message["first"]):
                         st.session_state.prompt_message = "John Dow"
                         st.session_state.flow_state = "name"
+                        ref.set("3")
                         message["first"] = False
                         st.session_state.messages.append({"role": "assistant",
                                                           "items": [
@@ -141,18 +155,13 @@ for message in st.session_state.messages:
                                                               {"type": "text", "content": "what is your name?"}],
                                                           "first": True})
             elif item_type == "pay":
-                # col1, col2, col3 = st.columns(3)
                 isDisabled = not message["first"]
-                #with col1:
                 if st.button("paypal", disabled=isDisabled):
                     payment_message()
                     message["first"] = False
-
-                #with col2:
                 if st.button("apple", disabled=isDisabled ):
                     payment_message()
                     message["first"] = False
-                #with col3:
                 if st.button("credit", disabled=isDisabled ):
                     payment_message()
                     message["first"] = False
@@ -208,6 +217,7 @@ if st.session_state.flow_state == "address":
                                               "items": [{"type": "pay"}],
                                               "first": True})
             st.session_state.flow_state = "payment"
+            ref.set("5")
         st.rerun()
 if prompt := st.chat_input(st.session_state.prompt_message):
     if prompt == "2":
@@ -223,6 +233,7 @@ if prompt := st.chat_input(st.session_state.prompt_message):
     if st.session_state.flow_state == "name":
         st.session_state.inactivity_state = "active"
         st.session_state.flow_state = "address"
+        ref.set("4")
         st.session_state.user_name = prompt
         m = "Hi " + st.session_state.user_name +", what is the shipping address for this order?"
         st.session_state.messages.append({"role": "assistant",
@@ -263,7 +274,7 @@ components.html("""
           {
             if (rule.cssText.substring(0,10) != "@media pri")
             {
-            console.log(rule.cssText);
+            // console.log(rule.cssText);
             styleSheet.deleteRule(i);
             i--;
             }
@@ -288,3 +299,4 @@ scroll_script = f"""
 </script>
 """
 st.markdown(scroll_script, unsafe_allow_html=True)
+
