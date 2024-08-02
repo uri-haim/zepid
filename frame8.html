@@ -146,7 +146,8 @@
 </head>
 <body>
     <div class="sidebar">
-        <img src="sidebarpic.webp" alt="Sidebar Image" style="width: 100%; height: auto;">
+        <a href="https://www.aloyoga.com/products/w51314r-7-8-high-waist-airlift-legging-espresso" style="color: lightblue; text-align: center;">7/8 HIGH-WAIST AIRLIFT LEGGING</a>
+        <img src="sidebarpic.webp" alt="Sidebar Image" style="width: 50%; height: auto; display: block; margin: 0 auto;">
         <div style="text-align: center;">
             <button id="addToBagBtn" style="width: 30%; display: inline-block; padding: 10px; margin-top: 10px; background-color: #4CAF50; color: white; border: none; cursor: pointer;">Add to Bag</button>
         </div>
@@ -175,34 +176,59 @@
             </div>
         </div>
     </div>
-    <script>
-
+    <script src="https://www.gstatic.com/firebasejs/10.12.4/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.4/firebase-database-compat.js"></script>
+    <script type="module">
         document.getElementById('addToBagBtn').addEventListener('click', function() {
-          document.getElementById('mainContent').style.display = 'block';
-                      document.querySelectorAll('.sidebar li').forEach(function(el) {
-                el.classList.remove('selected');
-            });
+            // display the iphone frame
+            document.getElementById('mainContent').style.display = 'block';
 
-          const secondTopic = document.querySelector('.sidebar ul li:nth-child(2)');
-            secondTopic.classList.add('selected');
+            // clear the selected style
+            document.querySelectorAll('.sidebar li').forEach(function(el) {el.classList.remove('selected');});
 
-
-          var iframe = document.getElementById('myIframe');
-          iframe.src = "https://zepichat.streamlit.app/?embed=true";
-        })
-        document.addEventListener('DOMContentLoaded', function() {
+            //select the first state
             const firstTopic = document.querySelector('.sidebar ul li:nth-child(1)');
             firstTopic.classList.add('selected');
 
-            document.querySelectorAll('.sidebar li').forEach(function(item) {
-                item.addEventListener('click', function() {
-                    document.querySelectorAll('.sidebar li').forEach(function(el) {
-                        el.classList.remove('selected');
-                    });
-                    this.classList.add('selected');
-                });
-            });
+            // load the streamlit app iframe
+            var iframe = document.getElementById('myIframe');
+            iframe.contentWindow.scrollTo(0, iframe.contentDocument.body.scrollHeight);
+            iframe.src = "http://localhost:8501/?embed=true";
+        })
+
+        // Import the firebase functions
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-app.js";
+        import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-database.js";
+
+        // Your web app's Firebase configuration
+        const firebaseConfig = {
+          apiKey: "AIzaSyA9q4Ay3r28xBYaBq35_k6quGuJY6gf7rg",
+          authDomain: "zepi-83415.firebaseapp.com",
+          databaseURL: "https://zepi-83415-default-rtdb.firebaseio.com",
+          projectId: "zepi-83415",
+          storageBucket: "zepi-83415.appspot.com",
+          messagingSenderId: "260064969084",
+          appId: "1:260064969084:web:f65bfe41e3eae2e6d4e4f9"
+        };
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase();
+        const stateRef = ref(db, 'state');
+        var first = true;
+        onValue(stateRef, (snapshot) => {
+            const data = snapshot.val();
+            console.log(data);
+            if (first == false) {
+                document.querySelectorAll('.sidebar li').forEach(function(el) {el.classList.remove('selected');});
+                const selectedTopic = document.querySelector('.sidebar ul li:nth-child(' + data + ')');
+                selectedTopic.classList.add('selected');
+            }
+            else {
+                first = false;
+            }
+
         });
-    </script>
+        // set(ref(db,'users/uri'), {username: "uri"});
+
+  </script>
 </body>
 </html>
