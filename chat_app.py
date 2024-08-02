@@ -7,14 +7,15 @@ import streamlit.components.v1 as components
 import firebase_admin
 from firebase_admin import credentials
 from firebase_admin import db
+import json
 import time
 
 # Set page config
 st.set_page_config(page_title="Zepi",layout='wide')
 
 # Initialise the OpenAI client, and retrieve the assistant
-client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
-assistant = client.beta.assistants.retrieve(st.secrets["ASSISTANT_ID"])
+# client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
+# assistant = client.beta.assistants.retrieve(st.secrets["ASSISTANT_ID"])
 
 # Apply custom CSS
 st.html("""
@@ -116,7 +117,11 @@ if "inactivity_state" not in st.session_state:
     st.session_state.inactivity_state = "active"
 
 if "mydb" not in firebase_admin._apps:
-    cred = credentials.Certificate("zepi-83415-firebase-adminsdk-ynoav-2ed077dd36.json")
+    with open('firebasecred.json', 'r') as file:
+        jsoncred = json.load(file)
+    jsoncred['private_key_id'] = st.secrets['private_key_id']
+    jsoncred['private_key'] = st.secrets['private_key']
+    cred = credentials.Certificate(jsoncred)
     # Initialize the app with a service account, granting admin privileges
     mydb = firebase_admin.initialize_app(cred, {
         'databaseURL': 'https://zepi-83415-default-rtdb.firebaseio.com'},"mydb")
