@@ -270,6 +270,7 @@ if st.session_state.flow_state == "address":
         st.rerun()
 if prompt := st.chat_input(st.session_state.prompt_message):
     if prompt == "2":
+        ref.set("1")
         st.switch_page("pages/flow2.py")
     st.session_state.messages.append({"role": "user",
                                         "items": [
