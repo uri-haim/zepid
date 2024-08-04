@@ -1,11 +1,16 @@
 import streamlit as st
-import json
 from openai import OpenAI
 from replacebutton import replacebutton
 from inactiveuser import inactiveuser
+import streamlit.components.v1 as components
 import time
 from openai.types.beta.assistant_stream_event import (ThreadMessageCreated,ThreadMessageDelta,ThreadRunRequiresAction)
-from openai.types.beta.threads.text_delta_block import TextDeltaBlock 
+from openai.types.beta.threads.text_delta_block import TextDeltaBlock
+import firebase_admin
+from firebase_admin import credentials
+from firebase_admin import db
+import json
+
 
 # Set page config
 st.set_page_config(page_title="Zepi",layout='wide')
@@ -28,6 +33,9 @@ st.html("""
                 [data-testid="stBottomBlockContainer"] > div {
                     padding: 0px !important;
                 }
+                .stChatMessage {
+                    padding: 0px;
+                }
 
 
         </style>
@@ -37,10 +45,11 @@ st.html("""
 def stream_data(textdata):
     for word in textdata.split(" "):
         yield word + " "
-        time.sleep(0.05)
+        time.sleep(0.08)
 
 
 def payment_message():
+    ref.set("6")
     st.session_state.messages2.append({"role": "assistant",
                                       "items": [{"type": "spinner", "content": "processing payment"}],
                                       "first": True})
@@ -62,6 +71,55 @@ def payment_message():
                                       "first": True})
     st.session_state.flow_state = "end"
 
+
+def remove_table_margins():
+    components.html("""
+        <script>
+            const doc = window.parent.document;
+            var wrapIframe = doc.querySelector('[title="st.iframe"]');
+            wrapIframe.parentElement.style.height = '0px';
+            wrapIframe.style.height = '0px';
+
+            const styleSheet = doc.styleSheets[3];
+            //console.log(doc.styleSheets);
+            for (let i = 0; i < styleSheet.cssRules.length; i++) {
+
+              const rule = styleSheet.cssRules[i];
+              if (rule.media)
+              {
+                if (rule.cssText.substring(0,10) != "@media pri")
+                {
+                // console.log(rule.cssText);
+                styleSheet.deleteRule(i);
+                i--;
+                }
+              }
+
+
+
+              // if (rule.cssText == "@media (max-width: 640px) {\\n  .st-emotion-cache-keje6w { min-width: calc(100% - 1.5rem); }\\n}") {
+                // console.log(i);
+                //console.log(rule);
+                // styleSheet.deleteRule(i);
+                //i--; // Adjust index after deletion
+              //}
+            }
+        </script>
+    """)
+
+
+if "mydb" not in firebase_admin._apps:
+    with open('firebasecred.json', 'r') as file:
+        jsoncred = json.load(file)
+    jsoncred['private_key_id'] = st.secrets['private_key_id']
+    jsoncred['private_key'] = st.secrets['private_key']
+    cred = credentials.Certificate(jsoncred)
+    # Initialize the app with a service account, granting admin privileges
+    mydb = firebase_admin.initialize_app(cred, {
+        'databaseURL': 'https://zepi-83415-default-rtdb.firebaseio.com'},"mydb")
+else:
+    mydb = firebase_admin.get_app("mydb")
+ref = db.reference('/state',mydb)
 
 # Create a new thread
 if "thread_id" not in st.session_state:
@@ -89,10 +147,13 @@ if "inactive_counter" not in st.session_state:
 if "last_state" not in st.session_state:
     st.session_state.last_state = "buttons"
 
-# UI
-
 if "messages2" not in st.session_state:
     st.session_state.messages2 = [{"role": "assistant",
+                                  "items": [
+                                      {"type": "image",
+                                       "content": "firstpic.jpeg"}],
+                                  "first": True},
+                                {"role": "assistant",
                                       "items": [
                                           {"type": "text",
                                            "content": "Nice pick " + st.session_state.user_name + "🤩"}],
@@ -124,9 +185,10 @@ for message in st.session_state.messages2:
                     st.write_stream(stream_data(item["content"]))
                     message["first"] = False
             elif item_type == "image":
-                for image in item["content"]:
-                    st.html(image)
+                st.image(item["content"], width=100)
             elif item_type == "buttons":
+                if message["first"]:
+                    ref.set("2")
                 col1, col2 = st.columns(2)
                 with col1:
                     if st.button("Add Items", disabled=not message["first"]):
@@ -134,6 +196,7 @@ for message in st.session_state.messages2:
 
                 with col2:
                     if st.button("Checkout", disabled=not message["first"]):
+                        ref.set("3")
                         st.session_state.flow_state = "confirm"
                         st.session_state.inactivity_state = "active"
                         st.session_state.inactive_counter = 0
@@ -148,25 +211,26 @@ for message in st.session_state.messages2:
                                                           "items": [{"type": "confirm"}],
                                                           "first": True})
             elif item_type == "confirm":
-                col1, col2 = st.columns([1, 1])
-                with col1:
-                    if st.button("Confirm", disabled=not message["first"]):
-                        message["first"] = False
-                        st.session_state.flow_state = "pay"
-                        st.session_state.pay_offered = True
-                        st.session_state.inactive_counter = 0
-                        st.session_state.messages2.append({"role": "assistant",
-                                                          "items": [
-                                                              {"type": "text",
-                                                               "content": "Your order total is $112. How would you like to pay?"}],
-                                                          "first": True})
-                        st.session_state.messages2.append({"role": "assistant",
-                                                          "items": [{"type": "pay"}],
-                                                          "first": True})
-                with col2:
-                    if st.button("Change Shipping Address", disabled=not message["first"]):
-                        st.markdown("not supported")
-                        message["first"] = False
+                if message["first"]:
+                    ref.set("4")
+                if st.button("Confirm", disabled=not message["first"]):
+                    ref.set("5")
+                    message["first"] = False
+                    st.session_state.flow_state = "pay"
+                    st.session_state.pay_offered = True
+                    st.session_state.inactive_counter = 0
+                    st.session_state.messages2.append({"role": "assistant",
+                                                      "items": [
+                                                          {"type": "text",
+                                                           "content": "Your order total is $112. How would you like to pay?"}],
+                                                      "first": True})
+                    st.session_state.messages2.append({"role": "assistant",
+                                                      "items": [{"type": "pay"}],
+                                                      "first": True})
+
+                if st.button("Change Shipping Address", disabled=not message["first"]):
+                    st.markdown("not supported")
+                    message["first"] = False
             elif item_type == "pay":
                 isDisabled = not message["first"]
                 if st.button("paypal", disabled=isDisabled):
@@ -188,7 +252,16 @@ for message in st.session_state.messages2:
                                       "first": True})
                 st.rerun()
 
+remove_table_margins()
 a = replacebutton()
+
+scroll_script = f"""
+<script>
+  var textArea = document.getElementById("root");
+  textArea.scrollTop = textArea.scrollHeight;
+</script>
+"""
+st.markdown(scroll_script, unsafe_allow_html=True)
 
 if prompt := st.chat_input(st.session_state.prompt_message):
 
@@ -315,7 +388,7 @@ if prompt := st.chat_input(st.session_state.prompt_message):
             st.session_state.inactive_counter = 0
 
 
-if st.session_state.inactive_counter < 2:
+if (st.session_state.inactive_counter < 2 and st.session_state.flow_state != "begin"):
     timeout = 0
     if st.session_state.flow_state == "chat":
         timeout = 10000
